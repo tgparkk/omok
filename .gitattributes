@@ -1,0 +1,2 @@
+# 모든 텍스트 파일은 저장소엔 LF, 워킹 디렉터리엔 OS 기본(line-ending)으로 체크아웃
+* text=auto
