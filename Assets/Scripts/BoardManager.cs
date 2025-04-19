@@ -4,27 +4,27 @@ using System.Collections;
 
 public class BoardManager : MonoBehaviour
 {
-    public int boardSize = 15; // ¿À¸ñÆÇ Å©±â (15x15)
-    public GameObject cellPrefab; // Ä­ ÇÁ¸®ÆÕ
-    public GameObject blackStonePrefab; // Èæµ¹ ÇÁ¸®ÆÕ
-    public GameObject whiteStonePrefab; // ¹éµ¹ ÇÁ¸®ÆÕ
-
-    private GameObject[,] cells; // Ä­ °´Ã¼ ¹è¿­
-    private int[,] boardState; // 0: ºóÄ­, 1: Èæµ¹, 2: ¹éµ¹
-    private bool isBlackTurn = true; // ÇöÀç ÅÏ (true: Èæµ¹, false: ¹éµ¹)
-
+    public int boardSize = 15; // ì˜¤ëª©íŒ í¬ê¸° (15x15)
+    public GameObject cellPrefab; // ì¹¸ í”„ë¦¬íŒ¹
+    public GameObject blackStonePrefab; // í‘ëŒ í”„ë¦¬íŒ¹
+    public GameObject whiteStonePrefab; // ë°±ëŒ í”„ë¦¬íŒ¹
+    
+    private GameObject[,] cells; // ì¹¸ ê°ì²´ ë°°ì—´
+    private int[,] boardState; // 0: ë¹ˆì¹¸, 1: í‘ëŒ, 2: ë°±ëŒ
+    private bool isBlackTurn = true; // í˜„ì¬ í„´ (true: í‘ëŒ, false: ë°±ëŒ)
+    
     void Start()
     {
         InitializeBoard();
     }
-
-    // ¿À¸ñÆÇ ÃÊ±âÈ­
+    
+    // ì˜¤ëª©íŒ ì´ˆê¸°í™”
     void InitializeBoard()
     {
         cells = new GameObject[boardSize, boardSize];
         boardState = new int[boardSize, boardSize];
-
-        // º¸µå Ä­ »ı¼º
+        
+        // ë³´ë“œ ì¹¸ ìƒì„±
         for (int y = 0; y < boardSize; y++)
         {
             for (int x = 0; x < boardSize; x++)
@@ -33,107 +33,107 @@ public class BoardManager : MonoBehaviour
                 GameObject cell = Instantiate(cellPrefab, position, Quaternion.identity);
                 cell.transform.SetParent(transform);
                 cell.name = $"Cell_{x}_{y}";
-
-                // Ä­¿¡ À§Ä¡ Á¤º¸ ÀúÀå
+                
+                // ì¹¸ì— ìœ„ì¹˜ ì •ë³´ ì €ì¥
                 CellInfo cellInfo = cell.AddComponent<CellInfo>();
                 cellInfo.x = x;
                 cellInfo.y = y;
-
+                
                 cells[x, y] = cell;
-                boardState[x, y] = 0; // ºóÄ­À¸·Î ÃÊ±âÈ­
+                boardState[x, y] = 0; // ë¹ˆì¹¸ìœ¼ë¡œ ì´ˆê¸°í™”
             }
         }
-
-        // Ä«¸Ş¶ó À§Ä¡ Á¶Á¤
+        
+        // ì¹´ë©”ë¼ ìœ„ì¹˜ ì¡°ì •
         Camera.main.transform.position = new Vector3((boardSize - 1) / 2f, (boardSize - 1) / 2f, -10);
         Camera.main.orthographicSize = boardSize / 2f + 1;
     }
-
-    // µ¹ ³õ±â
+    
+    // ëŒ ë†“ê¸°
     public bool PlaceStone(int x, int y)
     {
-        // ÀÌ¹Ì µ¹ÀÌ ÀÖ´ÂÁö È®ÀÎ
+        // ì´ë¯¸ ëŒì´ ìˆëŠ”ì§€ í™•ì¸
         if (boardState[x, y] != 0)
             return false;
-
-        // µ¹ ³õ±â
+        
+        // ëŒ ë†“ê¸°
         int stoneType = isBlackTurn ? 1 : 2;
         boardState[x, y] = stoneType;
-
-        // µ¹ »ı¼º
+        
+        // ëŒ ìƒì„±
         GameObject stonePrefab = isBlackTurn ? blackStonePrefab : whiteStonePrefab;
-        Vector3 position = new Vector3(x, y, -0.1f); // ¾à°£ ¾Õ¿¡ À§Ä¡
+        Vector3 position = new Vector3(x, y, -0.1f); // ì•½ê°„ ì•ì— ìœ„ì¹˜
         GameObject stone = Instantiate(stonePrefab, position, Quaternion.identity);
         stone.transform.SetParent(transform);
-
-        // ½Â¸® Ã¼Å©
+        
+        // ìŠ¹ë¦¬ ì²´í¬
         if (CheckWin(x, y, stoneType))
         {
-            Debug.Log((isBlackTurn ? "Èæµ¹" : "¹éµ¹") + " ½Â¸®!");
-            // ¿©±â¿¡ ½Â¸® Ã³¸® ·ÎÁ÷ Ãß°¡
+            Debug.Log((isBlackTurn ? "í‘ëŒ" : "ë°±ëŒ") + " ìŠ¹ë¦¬!");
+            // ì—¬ê¸°ì— ìŠ¹ë¦¬ ì²˜ë¦¬ ë¡œì§ ì¶”ê°€
         }
-
-        // ÅÏ ÀüÈ¯
+        
+        // í„´ ì „í™˜
         isBlackTurn = !isBlackTurn;
         return true;
     }
-
-    // ½Â¸® Ã¼Å© (°¡·Î, ¼¼·Î, ´ë°¢¼± ¹æÇâÀ¸·Î ¿¬¼Ó 5°³ È®ÀÎ)
+    
+    // ìŠ¹ë¦¬ ì²´í¬ (ê°€ë¡œ, ì„¸ë¡œ, ëŒ€ê°ì„  ë°©í–¥ìœ¼ë¡œ ì—°ì† 5ê°œ í™•ì¸)
     bool CheckWin(int x, int y, int stoneType)
     {
-        // °¡·Î ¹æÇâ Ã¼Å©
+        // ê°€ë¡œ ë°©í–¥ ì²´í¬
         if (CountStonesInDirection(x, y, 1, 0, stoneType) + CountStonesInDirection(x, y, -1, 0, stoneType) - 1 >= 5)
             return true;
-
-        // ¼¼·Î ¹æÇâ Ã¼Å©
+        
+        // ì„¸ë¡œ ë°©í–¥ ì²´í¬
         if (CountStonesInDirection(x, y, 0, 1, stoneType) + CountStonesInDirection(x, y, 0, -1, stoneType) - 1 >= 5)
             return true;
-
-        // ´ë°¢¼± ¹æÇâ Ã¼Å© (/)
+        
+        // ëŒ€ê°ì„  ë°©í–¥ ì²´í¬ (/)
         if (CountStonesInDirection(x, y, 1, 1, stoneType) + CountStonesInDirection(x, y, -1, -1, stoneType) - 1 >= 5)
             return true;
-
-        // ´ë°¢¼± ¹æÇâ Ã¼Å© (\)
+        
+        // ëŒ€ê°ì„  ë°©í–¥ ì²´í¬ (\)
         if (CountStonesInDirection(x, y, 1, -1, stoneType) + CountStonesInDirection(x, y, -1, 1, stoneType) - 1 >= 5)
             return true;
-
+        
         return false;
     }
-
-    // Æ¯Á¤ ¹æÇâÀ¸·Î ¿¬¼ÓµÈ °°Àº µ¹ °³¼ö ¼¼±â
+    
+    // íŠ¹ì • ë°©í–¥ìœ¼ë¡œ ì—°ì†ëœ ê°™ì€ ëŒ ê°œìˆ˜ ì„¸ê¸°
     int CountStonesInDirection(int x, int y, int dx, int dy, int stoneType)
     {
         int count = 0;
         int nx = x;
         int ny = y;
-
+        
         while (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize && boardState[nx, ny] == stoneType)
         {
             count++;
             nx += dx;
             ny += dy;
         }
-
+        
         return count;
     }
-
-    // ÇöÀç ÅÏ Á¤º¸ ¾ò±â
+    
+    // í˜„ì¬ í„´ ì •ë³´ ì–»ê¸°
     public bool IsBlackTurn()
     {
         return isBlackTurn;
     }
-
-    // º¸µå »óÅÂ ÃÊ±âÈ­ (Àç½ÃÀÛ¿ë)
+    
+    // ë³´ë“œ ìƒíƒœ ì´ˆê¸°í™” (ì¬ì‹œì‘ìš©)
     public void ResetBoard()
     {
-        // ¸ğµç µ¹ Á¦°Å
+        // ëª¨ë“  ëŒ ì œê±°
         foreach (Transform child in transform)
         {
-            if (child.GetComponent<CellInfo>() == null) // ¼¿ÀÌ ¾Æ´Ñ µ¹¸¸ Á¦°Å
+            if (child.GetComponent<CellInfo>() == null) // ì…€ì´ ì•„ë‹Œ ëŒë§Œ ì œê±°
                 Destroy(child.gameObject);
         }
-
-        // º¸µå »óÅÂ ÃÊ±âÈ­
+        
+        // ë³´ë“œ ìƒíƒœ ì´ˆê¸°í™”
         for (int y = 0; y < boardSize; y++)
         {
             for (int x = 0; x < boardSize; x++)
@@ -141,12 +141,12 @@ public class BoardManager : MonoBehaviour
                 boardState[x, y] = 0;
             }
         }
-
+        
         isBlackTurn = true;
     }
 }
 
-// °¢ Ä­ÀÇ À§Ä¡ Á¤º¸¸¦ ÀúÀåÇÏ´Â ½ºÅ©¸³Æ®
+// ê° ì¹¸ì˜ ìœ„ì¹˜ ì •ë³´ë¥¼ ì €ì¥í•˜ëŠ” ìŠ¤í¬ë¦½íŠ¸
 public class CellInfo : MonoBehaviour
 {
     public int x;
