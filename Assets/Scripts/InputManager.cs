@@ -29,13 +29,12 @@ public class InputManager : MonoBehaviour
     {
         // 스크린 좌표를 월드 좌표로 변환
         Vector3 worldPosition = Camera.main.ScreenToWorldPoint(inputPosition);
+        
+        // 가장 가까운 교차점 찾기 - 반올림으로 교차점 위치 결정
         int x = Mathf.RoundToInt(worldPosition.x);
         int y = Mathf.RoundToInt(worldPosition.y);
         
-        // 보드 범위 체크
-        if (x >= 0 && x < boardManager.boardSize && y >= 0 && y < boardManager.boardSize)
-        {
-            boardManager.PlaceStone(x, y);
-        }
+        // 보드 범위 체크 및 돌 놓기
+        boardManager.PlaceStone(x, y);
     }
 }
