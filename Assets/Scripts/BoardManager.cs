@@ -8,6 +8,7 @@ public class BoardManager : MonoBehaviour
     public GameObject cellPrefab; // 칸 프리팹
     public GameObject blackStonePrefab; // 흑돌 프리팹
     public GameObject whiteStonePrefab; // 백돌 프리팹
+    public GameObject lineRendererPrefab; // 새로 추가: 격자선 프리팹
     
     private GameObject[,] cells; // 칸 객체 배열
     private int[,] boardState; // 0: 빈칸, 1: 흑돌, 2: 백돌
@@ -21,6 +22,8 @@ public class BoardManager : MonoBehaviour
     // 오목판 초기화
     void InitializeBoard()
     {
+        Debug.Log("초기화 시작: 보드 크기 = " + boardSize);
+        
         cells = new GameObject[boardSize, boardSize];
         boardState = new int[boardSize, boardSize];
         
@@ -29,6 +32,8 @@ public class BoardManager : MonoBehaviour
         {
             for (int x = 0; x < boardSize; x++)
             {
+                Debug.Log("셀 생성: (" + x + ", " + y + ")");
+                
                 Vector3 position = new Vector3(x, y, 0);
                 GameObject cell = Instantiate(cellPrefab, position, Quaternion.identity);
                 cell.transform.SetParent(transform);
@@ -44,9 +49,37 @@ public class BoardManager : MonoBehaviour
             }
         }
         
+        // 격자선 생성 (가로)
+        for (int y = 0; y < boardSize; y++)
+        {
+            DrawLine(new Vector3(-0.5f, y, -0.05f), new Vector3(boardSize - 0.5f, y, -0.05f));
+        }
+        
+        // 격자선 생성 (세로)
+        for (int x = 0; x < boardSize; x++)
+        {
+            DrawLine(new Vector3(x, -0.5f, -0.05f), new Vector3(x, boardSize - 0.5f, -0.05f));
+        }
+        
         // 카메라 위치 조정
         Camera.main.transform.position = new Vector3((boardSize - 1) / 2f, (boardSize - 1) / 2f, -10);
         Camera.main.orthographicSize = boardSize / 2f + 1;
+    }
+    
+    // 선 그리기 함수
+    void DrawLine(Vector3 start, Vector3 end)
+    {
+        GameObject lineObj = new GameObject("GridLine");
+        lineObj.transform.SetParent(transform);
+        LineRenderer line = lineObj.AddComponent<LineRenderer>();
+        
+        line.material = new Material(Shader.Find("Sprites/Default"));
+        line.startColor = line.endColor = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+        line.startWidth = line.endWidth = 0.05f;
+        line.positionCount = 2;
+        line.SetPosition(0, start);
+        line.SetPosition(1, end);
+        line.sortingOrder = -1; // 돌 아래에 그리기
     }
     
     // 돌 놓기
