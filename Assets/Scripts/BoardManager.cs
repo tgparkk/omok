@@ -12,6 +12,8 @@ public class BoardManager : MonoBehaviour
     private int[,] boardState; // 0: 빈칸, 1: 흑돌, 2: 백돌
     private bool isBlackTurn = true; // 현재 턴 (true: 흑돌, false: 백돌)
     
+    private bool isGameOver = false;
+    
     void Start()
     {
         InitializeBoard();
@@ -137,6 +139,9 @@ public class BoardManager : MonoBehaviour
     // 돌 놓기 (교차점에 놓도록 수정)
     public bool PlaceStone(int x, int y)
     {
+        if (isGameOver)
+            return false;
+        
         // 보드 범위 체크
         if (x < 0 || x >= boardSize || y < 0 || y >= boardSize)
             return false;
@@ -159,34 +164,58 @@ public class BoardManager : MonoBehaviour
         if (CheckWin(x, y, stoneType))
         {
             Debug.Log((isBlackTurn ? "흑돌" : "백돌") + " 승리!");
-            // 여기에 승리 처리 로직 추가
+            isGameOver = true; // 게임 종료 설정
+        
+            // GameManager에 승리 알림
+            GameManager gameManager = FindObjectOfType<GameManager>();
+            if (gameManager != null)
+            {
+                gameManager.ShowVictory(isBlackTurn);
+            }
+        }
+        else
+        {
+            // 턴 전환 (게임이 끝나지 않았을 때만)
+            isBlackTurn = !isBlackTurn;
         }
         
-        // 턴 전환
-        isBlackTurn = !isBlackTurn;
         return true;
     }
     
     // 승리 체크 (가로, 세로, 대각선 방향으로 연속 5개 확인)
     bool CheckWin(int x, int y, int stoneType)
     {
+        bool isWin = false;
+
+        
         // 가로 방향 체크
         if (CountStonesInDirection(x, y, 1, 0, stoneType) + CountStonesInDirection(x, y, -1, 0, stoneType) - 1 >= 5)
-            return true;
+            isWin = true;
         
         // 세로 방향 체크
         if (CountStonesInDirection(x, y, 0, 1, stoneType) + CountStonesInDirection(x, y, 0, -1, stoneType) - 1 >= 5)
-            return true;
+            isWin = true;
         
         // 대각선 방향 체크 (/)
         if (CountStonesInDirection(x, y, 1, 1, stoneType) + CountStonesInDirection(x, y, -1, -1, stoneType) - 1 >= 5)
-            return true;
+            isWin = true;
         
         // 대각선 방향 체크 (\)
         if (CountStonesInDirection(x, y, 1, -1, stoneType) + CountStonesInDirection(x, y, -1, 1, stoneType) - 1 >= 5)
-            return true;
+            isWin = true;
         
-        return false;
+        // 승리 시 GameManager 호출
+        if (isWin)
+        {
+            GameManager gameManager = FindObjectOfType<GameManager>();
+            if (gameManager != null)
+            {
+                // 흑돌(1) 또는 백돌(2) 승리 여부 전달
+                gameManager.ShowVictory(stoneType == 1);
+            }
+        }
+    
+        return isWin;
     }
     
     // 특정 방향으로 연속된 같은 돌 개수 세기
@@ -232,6 +261,7 @@ public class BoardManager : MonoBehaviour
         }
         
         isBlackTurn = true;
+        isGameOver = false; // 게임 종료 상태 초기화
     }
     
     public void ReturnToMainMenu()
