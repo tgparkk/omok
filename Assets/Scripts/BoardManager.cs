@@ -135,53 +135,194 @@ public class BoardManager : MonoBehaviour
         // 크기 조정
         dotObj.transform.localScale = new Vector3(0.1f, 0.1f, 1);
     }
-    
-    // 돌 놓기 (교차점에 놓도록 수정)
+
+    // 특정 위치가 비어있는지 확인하는 함수
+    public bool IsCellEmpty(int x, int y)
+    {
+        // 보드 범위 체크
+        if (x < 0 || x >= boardSize || y < 0 || y >= boardSize)
+            return false;
+
+        // 돌이 있는지 직접 확인
+        foreach (Transform child in transform)
+        {
+            // 자식 객체 중 Cell이 아닌 돌만 확인
+            if (child.name.Contains("Stone") || !child.name.Contains("Cell"))
+            {
+                if (Mathf.Approximately(child.position.x, x) && Mathf.Approximately(child.position.y, y))
+                {
+                    return false; // 이미 돌이 있음
+                }
+            }
+        }
+
+        return true; // 셀이 비어있음
+    }
+
+    // 특정 돌 타입의 연속 4개를 찾아 승리 가능한 위치 반환
+    public Vector2Int FindWinningMove(int stoneType)
+    {
+        // 모든 방향 (가로, 세로, 대각선)
+        int[] dx = { 1, 0, 1, 1 }; // 가로, 세로, 대각선(↘), 대각선(↗)
+        int[] dy = { 0, 1, 1, -1 };
+
+        for (int x = 0; x < boardSize; x++)
+        {
+            for (int y = 0; y < boardSize; y++)
+            {
+                // 빈 위치만 검사
+                if (boardState[x, y] != 0) continue;
+
+                // 모든 방향 검사
+                for (int dir = 0; dir < 4; dir++)
+                {
+                    int count = 0;
+
+                    // 양방향 검사 (앞뒤로 확인)
+                    for (int sign = -1; sign <= 1; sign += 2)
+                    {
+                        for (int i = 1; i <= 4; i++)
+                        {
+                            int nx = x + sign * i * dx[dir];
+                            int ny = y + sign * i * dy[dir];
+
+                            // 보드 범위 체크
+                            if (nx < 0 || nx >= boardSize || ny < 0 || ny >= boardSize)
+                                break;
+
+                            // 같은 돌이 아니면 중단
+                            if (boardState[nx, ny] != stoneType)
+                                break;
+
+                            count++;
+                        }
+                    }
+
+                    // 연속 4개 발견 (5목을 만들 수 있는 위치)
+                    if (count >= 4)
+                    {
+                        return new Vector2Int(x, y);
+                    }
+                }
+            }
+        }
+
+        // 승리 가능한 위치 없음
+        return new Vector2Int(-1, -1);
+    }
+
+    // 연속된 2~3개 돌이 있는 좋은 위치 찾기
+    public Vector2Int FindGoodMove(int stoneType)
+    {
+        Vector2Int bestMove = new Vector2Int(-1, -1);
+        int bestScore = -1;
+
+        // 모든 방향 (가로, 세로, 대각선)
+        int[] dx = { 1, 0, 1, 1 };
+        int[] dy = { 0, 1, 1, -1 };
+
+        for (int x = 0; x < boardSize; x++)
+        {
+            for (int y = 0; y < boardSize; y++)
+            {
+                // 빈 위치만 검사
+                if (boardState[x, y] != 0) continue;
+
+                int totalScore = 0;
+
+                // 모든 방향 검사
+                for (int dir = 0; dir < 4; dir++)
+                {
+                    int score = 0;
+
+                    // 양방향 검사 (앞뒤로 확인)
+                    for (int sign = -1; sign <= 1; sign += 2)
+                    {
+                        for (int i = 1; i <= 3; i++) // 최대 3칸까지 검사
+                        {
+                            int nx = x + sign * i * dx[dir];
+                            int ny = y + sign * i * dy[dir];
+
+                            // 보드 범위 체크
+                            if (nx < 0 || nx >= boardSize || ny < 0 || ny >= boardSize)
+                                break;
+
+                            // 같은 돌이면 점수 추가
+                            if (boardState[nx, ny] == stoneType)
+                                score++;
+                            else
+                                break;
+                        }
+                    }
+
+                    // 이 방향의 점수 합산
+                    totalScore += score * score; // 제곱해서 연속된 돌에 가중치 부여
+                }
+
+                // 최고 점수 갱신
+                if (totalScore > bestScore)
+                {
+                    bestScore = totalScore;
+                    bestMove = new Vector2Int(x, y);
+                }
+            }
+        }
+
+        // 좋은 위치가 없으면 (-1, -1) 반환
+        return bestMove;
+    }
+
     public bool PlaceStone(int x, int y)
     {
         if (isGameOver)
             return false;
-        
+
         // 보드 범위 체크
         if (x < 0 || x >= boardSize || y < 0 || y >= boardSize)
             return false;
-            
+
         // 이미 돌이 있는지 확인
-        if (boardState[x, y] != 0)
+        if (!IsCellEmpty(x, y))
             return false;
-        
+
         // 돌 놓기
         int stoneType = isBlackTurn ? 1 : 2;
         boardState[x, y] = stoneType;
-        
+
         // 돌 생성 - 정확히 교차점에 위치하도록
         GameObject stonePrefab = isBlackTurn ? blackStonePrefab : whiteStonePrefab;
-        Vector3 position = new Vector3(x, y, -0.1f); // 교차점 위치
+        Vector3 position = new Vector3(x, y, -0.1f);
         GameObject stone = Instantiate(stonePrefab, position, Quaternion.identity);
         stone.transform.SetParent(transform);
-        
+
         // 승리 체크
         if (CheckWin(x, y, stoneType))
         {
-            Debug.Log((isBlackTurn ? "흑돌" : "백돌") + " 승리!");
-            isGameOver = true; // 게임 종료 설정
-        
+            isGameOver = true;
+
             // GameManager에 승리 알림
-            GameManager gameManager = FindObjectOfType<GameManager>();
-            if (gameManager != null)
+            GameManager gameManager1 = FindObjectOfType<GameManager>();
+            if (gameManager1 != null)
             {
-                gameManager.ShowVictory(isBlackTurn);
+                gameManager1.ShowVictory(isBlackTurn);
             }
+
+            return true;
         }
-        else
+
+        // 턴 전환
+        isBlackTurn = !isBlackTurn;
+
+        // GameManager에 플레이어 턴 종료 알림
+        GameManager gameManager = FindObjectOfType<GameManager>();
+        if (gameManager != null)
         {
-            // 턴 전환 (게임이 끝나지 않았을 때만)
-            isBlackTurn = !isBlackTurn;
+            gameManager.PlayerMoved();
         }
-        
+
         return true;
     }
-    
+
     // 승리 체크 (가로, 세로, 대각선 방향으로 연속 5개 확인)
     bool CheckWin(int x, int y, int stoneType)
     {
