@@ -16,7 +16,10 @@ public class InputManager : MonoBehaviour
     {
         // 게임 종료 상태이거나 컴퓨터 턴이면 입력 처리 안함
         if (gameManager != null && gameManager.IsComputerTurn())
+        {
+            // 컴퓨터 턴일 때는 입력 무시
             return;
+        }
 
         // 마우스 클릭 처리 (PC)
         if (Input.GetMouseButtonDown(0))
@@ -33,6 +36,12 @@ public class InputManager : MonoBehaviour
 
     void HandleInput(Vector3 inputPosition)
     {
+        // 컴퓨터 턴이면 입력 처리 안함 (이중 체크)
+        if (gameManager != null && gameManager.IsComputerTurn())
+        {
+            return;
+        }
+
         // 스크린 좌표를 월드 좌표로 변환
         Vector3 worldPosition = Camera.main.ScreenToWorldPoint(inputPosition);
 
